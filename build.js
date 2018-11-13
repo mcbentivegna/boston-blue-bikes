@@ -2,18 +2,8 @@ var https = require('https')
 
 
 var eventEmitter = require('events')
-
 class MyEmitter extends eventEmitter {}
-
-const myEmitter = new MyEmitter();
-myEmitter.on('blah',(myString) =>{
-	console.log('Caroline');
-	console.log(myString)
-	html += myString
-})
-
-const regionEmitter = new MyEmitter();
-const stationEmitter = new MyEmitter();
+const bikeDataEmitter = new MyEmitter();
 
 
 function getRegions(){
@@ -39,7 +29,7 @@ function getRegions(){
        
        	//extract regions and their names
         regions = regionInfo.data.regions;
-        regionEmitter.emit('region_data_end', regions)
+        bikeDataEmitter.emit('region_data_end', regions)
         
       });
     }
@@ -101,9 +91,10 @@ function getStations(regions){
 	  			html +=  '<p>'+ station.name + '</p>'
 	  		})
 	  	})
+	  	var regions_with_stations = regions;
 
         //emit the HTML 
-        stationEmitter.emit('station_data_end', html)
+        bikeDataEmitter.emit('station_data_end', regions_with_stations)
         	
 
       });
@@ -112,15 +103,15 @@ function getStations(regions){
 
 }
 
-function getStationStatus(regions){
+function getStationStatus(regions_with_stations){
 	var body = ''
 	var html = ''
 	url = 'https://gbfs.bluebikes.com/gbfs/en/station_status.json'
 
 	//throw out any regions without stations, we don't want to display these
-				  	var regionsToDisplay = regions.filter(function(region){
-				  		return region.stations.length>0
-				  	})
+	var regionsToDisplay = regions_with_stations.filter(function(region){
+		return region.stations.length>0
+	})
 
 	var request = https.get(url, function(response){
 	 	if (response.statusCode != 200){
@@ -135,27 +126,43 @@ function getStationStatus(regions){
     		response.on('end', function(){
     			var stationStatusInfo = JSON.parse(body);
     			var stationStatuses = stationStatusInfo.data.stations
-    			
-    			//tesssssssssssssssssting!
-    			var num_bikes_available = stationStatuses.find((station) => station.station_id == '4')
-    			console.log(num_bikes_available)
-
-
-    			//for real (we'll try)
-    			regions[0].stations.map(function(station){
+    		
+    			//add station status info to station object
+    		regionsToDisplay.forEach(function(region){
+    			region.stations.map(function(station){
     				var station_id = station.station_id
     				var stationStatus = stationStatuses.find((station) => station.station_id == station_id)
-    				station.num_bikes_available = stationStatus.num_bikes_available;
-    				//or????
-    				station.station_status
+    				station.station_status = stationStatus
 
     			})
-    			console.log(regions[0])
 
+    		});
+
+    		regionsToDisplay.forEach(function(region){
+		  		html += '<h1>' + region.name + '</h1>'
+		  		html += '<table>'
+		  		html += '<tr> \
+		  					<td >Station</td>\
+		  					<td>Capacity</td>\
+		  					<td>Bikes Available</td>\
+		  					<td>Docks Available</td>\
+		  				</tr>'
+		  		region.stations.map(station => {
+		  			html += '<tr>' +
+		  				 '<td>'+ station.name + '</td>' +
+		  				 '<td>'+ station.capacity + '</td>' +
+		  				 '<td>'+ station.station_status.num_bikes_available + '</td>' +
+		  				 '<td>'+ station.station_status.num_docks_available + '</td>' 
+		  		})
+		  		html += '</table>'
+
+	  	})
+    	bikeDataEmitter.emit('station_status_data_end', html)
     			
     		})
-
+		
     	}
+    	
 
 	})
 }
@@ -165,12 +172,16 @@ function getStationStatus(regions){
 function build(newServerRequest, newServerResponse){
 	
 	getRegions();
-	regionEmitter.on('region_data_end', function(regions){
-	getStations(regions);
+	
+	bikeDataEmitter.on('region_data_end', function(regions){
+		getStations(regions);
 	})
 
-	
-	stationEmitter.on('station_data_end', function(html){
+	bikeDataEmitter.on('station_data_end', function(regions_with_stations){
+		getStationStatus(regions_with_stations)
+	})
+
+	bikeDataEmitter.on('station_status_data_end', function(html){
 		newServerResponse.writeHead(200, {'Content-Type': 'text/html'});  
 		newServerResponse.write(html)
 		newServerResponse.end()
@@ -182,25 +193,24 @@ function build(newServerRequest, newServerResponse){
 function testBuild(newServerRequest, newServerResponse){
 	
 	getRegions();
-	regionEmitter.on('region_data_end', function(regions){
+	bikeDataEmitter.on('region_data_end', function(regions){
 		regionInfo = regions;
 		regionInfo.map(region => region.stations = []);
 		getStations(regionInfo);
 	})
 
 	
-	stationEmitter.on('station_data_end', function(html){
-		//newServerResponse.writeHead(200, {'Content-Type': 'text/html'});  
-		//newServerResponse.write(html)
-		//newServerResponse.end()
-		getStationStatus(regions)
+	/*bikeDataEmitter.on('station_data_end', function(html){
+		
+		getStationStatus(html)
+	})
+*/
+	bikeDataEmitter.on('station_status_data_end', function(html){
+		console.log(html)
 	})
 	
 	
 }
-
-
-
 
 module.exports.build = build
 module.exports.testBuild = testBuild
