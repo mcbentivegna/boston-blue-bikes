@@ -1,17 +1,17 @@
-var https = require('https')
+const https = require('https')
 
 
-var eventEmitter = require('events')
+const eventEmitter = require('events')
 class MyEmitter extends eventEmitter {}
 const bikeDataEmitter = new MyEmitter();
 
 
 function getRegions(){
   
-  var body = "";
-  var url = 'https://gbfs.bluebikes.com/gbfs/en/system_regions.json'
+  let body = "";
+  let url = 'https://gbfs.bluebikes.com/gbfs/en/system_regions.json'
 
-  var request = https.get(url, function(response){
+  const request = https.get(url, function(response){
     
     if (response.statusCode != 200){
      request.abort();
@@ -25,7 +25,7 @@ function getRegions(){
       
       //when the data's done coming in, parse it
       response.on('end', function(){
-        var regionInfo = JSON.parse(body);
+        const regionInfo = JSON.parse(body);
        
        	//extract regions and their names
         regions = regionInfo.data.regions;
@@ -39,11 +39,11 @@ function getRegions(){
 
 function getStations(regions){
   
-  var body = "";
-  var html = '';
-  var url = 'https://gbfs.bluebikes.com/gbfs/en/station_information.json'
+  let body = "";
+  let html = '';
+  const url = 'https://gbfs.bluebikes.com/gbfs/en/station_information.json'
 	
-  var request = https.get(url, function(response){
+  const request = https.get(url, function(response){
     
     if (response.statusCode != 200){
      request.abort();
@@ -57,10 +57,10 @@ function getStations(regions){
       
       //when the data's done coming in, parse it
       response.on('end', function(){
-       var stationInfo = JSON.parse(body);
+       const stationInfo = JSON.parse(body);
        
        //extract regions and their names
-       var  stations = stationInfo.data.stations;
+       const  stations = stationInfo.data.stations;
 
        //add stations field to regions object so there's somewhere to put the station data.
        regions.map(region => region.stations = []);
@@ -71,7 +71,7 @@ function getStations(regions){
         regions.forEach(function(region){
         	
 	  		//add stations to region.stations
-	  		var myStations = stations.filter(function(station){
+	  		const myStations = stations.filter(function(station){
 	  			return station.region_id == region.region_id
 	   		})
 	  		region.stations = myStations;
@@ -79,7 +79,7 @@ function getStations(regions){
 	  		
 	  	});
 //throw out any regions without stations, we don't want to display these
-				  	var regionsToDisplay = regions.filter(function(region){
+				  	const regionsToDisplay = regions.filter(function(region){
 				  		return region.stations.length>0
 				  	})
 
@@ -91,7 +91,7 @@ function getStations(regions){
 	  			html +=  '<p>'+ station.name + '</p>'
 	  		})
 	  	})
-	  	var regions_with_stations = regions;
+	  	const regions_with_stations = regions;
 
         //emit the HTML 
         bikeDataEmitter.emit('station_data_end', regions_with_stations)
@@ -104,16 +104,16 @@ function getStations(regions){
 }
 
 function getStationStatus(regions_with_stations){
-	var body = ''
-	var html = ''
-	url = 'https://gbfs.bluebikes.com/gbfs/en/station_status.json'
+	let body = ''
+	let html = ''
+	const url = 'https://gbfs.bluebikes.com/gbfs/en/station_status.json'
 
 	//throw out any regions without stations, we don't want to display these
-	var regionsToDisplay = regions_with_stations.filter(function(region){
+	const regionsToDisplay = regions_with_stations.filter(function(region){
 		return region.stations.length>0
 	})
 
-	var request = https.get(url, function(response){
+	const request = https.get(url, function(response){
 	 	if (response.statusCode != 200){
 	     	request.abort();
 	     	console.log('There was an error connecting to ' + url ); 
@@ -124,14 +124,14 @@ function getStationStatus(regions_with_stations){
     		})
 
     		response.on('end', function(){
-    			var stationStatusInfo = JSON.parse(body);
-    			var stationStatuses = stationStatusInfo.data.stations
+    			const stationStatusInfo = JSON.parse(body);
+    			const stationStatuses = stationStatusInfo.data.stations
     		
     			//add station status info to station object
     		regionsToDisplay.forEach(function(region){
     			region.stations.map(function(station){
-    				var station_id = station.station_id
-    				var stationStatus = stationStatuses.find((station) => station.station_id == station_id)
+    				const station_id = station.station_id
+    				const stationStatus = stationStatuses.find((station) => station.station_id == station_id)
     				station.station_status = stationStatus
 
     			})
@@ -148,11 +148,13 @@ function getStationStatus(regions_with_stations){
 		  					<td>Docks Available</td>\
 		  				</tr>'
 		  		region.stations.map(station => {
-		  			html += '<tr>' +
-		  				 '<td>'+ station.name + '</td>' +
-		  				 '<td>'+ station.capacity + '</td>' +
-		  				 '<td>'+ station.station_status.num_bikes_available + '</td>' +
-		  				 '<td>'+ station.station_status.num_docks_available + '</td>' 
+		  			html += 
+		  				`<tr>
+			  				 <td> ${station.name} </td>
+			  				 <td> ${station.capacity} </td>
+			  				 <td> ${station.station_status.num_bikes_available} </td>
+			  				 <td> ${station.station_status.num_docks_available} </td>
+		  				</tr>`
 		  		})
 		  		html += '</table>'
 

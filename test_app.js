@@ -1,3 +1,3 @@
-var builder = require('./build.js');
+const builder = require('./build.js');
 
 builder.testBuild();
