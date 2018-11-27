@@ -6,10 +6,13 @@ class MyEmitter extends eventEmitter {}
 const bikeDataEmitter = new MyEmitter();
 
 
+
 function getRegions(){
   
   let body = "";
   let url = 'https://gbfs.bluebikes.com/gbfs/en/system_regions.json'
+
+  console.log("getRegions() started")
 
   const request = https.get(url, function(response){
     
@@ -20,16 +23,21 @@ function getRegions(){
     else{
       //as the data comes in, capture it
       response.on('data', function(chunk){
-        body += chunk;             
+      	console.log('region data')
+        body += chunk;
+        bikeDataEmitter.emit('data',chunk)             
       });
       
       //when the data's done coming in, parse it
       response.on('end', function(){
+      	console.log('region api response ended')
         const regionInfo = JSON.parse(body);
        
        	//extract regions and their names
         regions = regionInfo.data.regions;
+        console.log('before emit region_data_end')
         bikeDataEmitter.emit('region_data_end', regions)
+        console.log('after emit region_data_end')
         
       });
     }
@@ -40,7 +48,6 @@ function getRegions(){
 function getStations(regions){
   
   let body = "";
-  let html = '';
   const url = 'https://gbfs.bluebikes.com/gbfs/en/station_information.json'
 	
   const request = https.get(url, function(response){
@@ -52,7 +59,9 @@ function getStations(regions){
     else{
       //as the data comes in, capture it
       response.on('data', function(chunk){
-        body += chunk;             
+      	console.log('station data')
+        body += chunk;
+        bikeDataEmitter.emit('data',chunk)               
       });
       
       //when the data's done coming in, parse it
@@ -78,24 +87,18 @@ function getStations(regions){
 
 	  		
 	  	});
-//throw out any regions without stations, we don't want to display these
+	//throw out any regions without stations, we don't want to display these
 				  	const regionsToDisplay = regions.filter(function(region){
 				  		return region.stations.length>0
 				  	})
 
 	  
-	  	//build HTML to return to regions to display
-	  	regionsToDisplay.forEach(function(region){
-	  		html += '<h1>' + region.name + '</h1>'
-	  		region.stations.map(station => {
-	  			html +=  '<p>'+ station.name + '</p>'
-	  		})
-	  	})
 	  	const regions_with_stations = regions;
 
         //emit the HTML 
+         console.log('before emit station_data_end')
         bikeDataEmitter.emit('station_data_end', regions_with_stations)
-        	
+        console.log('after emit station_data_end')	
 
       });
     }
@@ -120,7 +123,9 @@ function getStationStatus(regions_with_stations){
     	}
     	else{
     		response.on('data',function(chunk){
+    			console.log('station status data')
     			body += chunk
+    			bikeDataEmitter.emit('data',chunk)  
     		})
 
     		response.on('end', function(){
@@ -169,24 +174,39 @@ function getStationStatus(regions_with_stations){
 	})
 }
 
-
+function regionsBuild(newServerRequest, newServerResponse){
+	//getRegions();
+	
+	bikeDataEmitter.on('region_data_end', function(regions){
+		console.log('region_data_end')
+		newServerResponse.writeHead(200, {'Content-Type': 'text/html'});  
+		//newServerResponse.write(regions[0].name);
+		newServerResponse.end(regions[0].name);
+	})
+}
 
 function build(newServerRequest, newServerResponse){
 	
 	getRegions();
 	
-	bikeDataEmitter.on('region_data_end', function(regions){
+
+
+	bikeDataEmitter.once('region_data_end', function(regions){
+		console.log('on region_data_end')
 		getStations(regions);
 	})
 
-	bikeDataEmitter.on('station_data_end', function(regions_with_stations){
+	bikeDataEmitter.once('station_data_end', function(regions_with_stations){
+		console.log('station_data_end')
 		getStationStatus(regions_with_stations)
 	})
 
-	bikeDataEmitter.on('station_status_data_end', function(html){
+	bikeDataEmitter.once('station_status_data_end', function(html){
+		console.log('station_status_data_end')
 		newServerResponse.writeHead(200, {'Content-Type': 'text/html'});  
-		newServerResponse.write(html)
-		newServerResponse.end()
+		newServerResponse.write(html);
+		newServerResponse.end();
+		
 	})
 	
 	
@@ -196,25 +216,31 @@ function testBuild(newServerRequest, newServerResponse){
 	
 	getRegions();
 	bikeDataEmitter.on('region_data_end', function(regions){
-		regionInfo = regions;
-		regionInfo.map(region => region.stations = []);
-		getStations(regionInfo);
+		console.log('region_data_end')
+		getStations(regions);
 	})
 
 	
-	/*bikeDataEmitter.on('station_data_end', function(html){
-		
-		getStationStatus(html)
+	bikeDataEmitter.on('station_data_end', function(regions_with_stations){
+		console.log('station_data_end')
+		getStationStatus(regions_with_stations)
 	})
-*/
+
+	
+
 	bikeDataEmitter.on('station_status_data_end', function(html){
-		console.log(html)
+		console.log('station_status_data_end')
+		console.log(html.substring(0,100))
 	})
+	
+
+	
 	
 	
 }
 
 module.exports.build = build
+module.exports.regionsBuild = regionsBuild
 module.exports.testBuild = testBuild
 module.exports.getRegions = getRegions
 module.exports.getStations = getStations
