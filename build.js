@@ -1,18 +1,31 @@
 const https = require('https')
+const fs = require('fs')
+const renderer = require('./renderer')
 
 
 const eventEmitter = require('events')
 class MyEmitter extends eventEmitter {}
 const bikeDataEmitter = new MyEmitter();
 
+//what's the base URL of the feed? In this case, we're interested in NYC bikes.
+//note the english language specification at the end, I'm not sure if smaller bike shares bother to specify the language
+
+city_urls = {
+  'philidelphia': 'https://gbfs.bcycle.com/bcycle_indego',
+  'newyork' :  'https://gbfs.citibikenyc.com/gbfs/en',
+  'boston' : 'https://gbfs.bluebikes.com/gbfs/en',
+  'chicago': 'https://gbfs.divvybikes.com/gbfs/en',
+  'sanfrancisco': 'https://gbfs.fordgobike.com/gbfs/en',
+  'washingtondc': 'https://gbfs.capitalbikeshare.com/gbfs/en',
+}
 
 
-function getRegions(){
+
+//pull data about specific regions
+function getRegions(GBFS_URL){
   
   let body = "";
-  let url = 'https://gbfs.bluebikes.com/gbfs/en/system_regions.json'
-
-  console.log("getRegions() started")
+  let url = `${GBFS_URL}/system_regions.json`
 
   const request = https.get(url, function(response){
     
@@ -23,21 +36,17 @@ function getRegions(){
     else{
       //as the data comes in, capture it
       response.on('data', function(chunk){
-      	console.log('region data')
         body += chunk;
         bikeDataEmitter.emit('data',chunk)             
       });
       
       //when the data's done coming in, parse it
       response.on('end', function(){
-      	console.log('region api response ended')
         const regionInfo = JSON.parse(body);
        
        	//extract regions and their names
         regions = regionInfo.data.regions;
-        console.log('before emit region_data_end')
         bikeDataEmitter.emit('region_data_end', regions)
-        console.log('after emit region_data_end')
         
       });
     }
@@ -45,10 +54,11 @@ function getRegions(){
 
 }
 
-function getStations(regions){
+//pull data about stations
+function getStations(GBFS_URL){
   
   let body = "";
-  const url = 'https://gbfs.bluebikes.com/gbfs/en/station_information.json'
+  const url = `${GBFS_URL}/station_information.json`
 	
   const request = https.get(url, function(response){
     
@@ -58,8 +68,7 @@ function getStations(regions){
     }
     else{
       //as the data comes in, capture it
-      response.on('data', function(chunk){
-      	console.log('station data')
+      	response.on('data', function(chunk){
         body += chunk;
         bikeDataEmitter.emit('data',chunk)               
       });
@@ -68,37 +77,9 @@ function getStations(regions){
       response.on('end', function(){
        const stationInfo = JSON.parse(body);
        
-       //extract regions and their names
        const  stations = stationInfo.data.stations;
-
-       //add stations field to regions object so there's somewhere to put the station data.
-       regions.map(region => region.stations = []);
-
-
-        //run through the regions. Filter all the stations that belong to the region, and add it to region.stations for posterity
-        //while you're at it, let's make the HTML we'll need
-        regions.forEach(function(region){
-        	
-	  		//add stations to region.stations
-	  		const myStations = stations.filter(function(station){
-	  			return station.region_id == region.region_id
-	   		})
-	  		region.stations = myStations;
-
-	  		
-	  	});
-	//throw out any regions without stations, we don't want to display these
-				  	const regionsToDisplay = regions.filter(function(region){
-				  		return region.stations.length>0
-				  	})
-
-	  
-	  	const regions_with_stations = regions;
-
-        //emit the HTML 
-         console.log('before emit station_data_end')
-        bikeDataEmitter.emit('station_data_end', regions_with_stations)
-        console.log('after emit station_data_end')	
+ 
+        bikeDataEmitter.emit('station_data_end', stations)
 
       });
     }
@@ -106,15 +87,11 @@ function getStations(regions){
 
 }
 
-function getStationStatus(regions_with_stations){
+//pull data about station statuses, and merge it with station data. This merging should probably be done in a separate function...
+function getStationStatus(GBFS_URL, stations){
 	let body = ''
-	let html = ''
-	const url = 'https://gbfs.bluebikes.com/gbfs/en/station_status.json'
+	const url = `${GBFS_URL}/station_status.json`
 
-	//throw out any regions without stations, we don't want to display these
-	const regionsToDisplay = regions_with_stations.filter(function(region){
-		return region.stations.length>0
-	})
 
 	const request = https.get(url, function(response){
 	 	if (response.statusCode != 200){
@@ -123,7 +100,7 @@ function getStationStatus(regions_with_stations){
     	}
     	else{
     		response.on('data',function(chunk){
-    			console.log('station status data')
+    			//console.log('station status data')
     			body += chunk
     			bikeDataEmitter.emit('data',chunk)  
     		})
@@ -131,40 +108,16 @@ function getStationStatus(regions_with_stations){
     		response.on('end', function(){
     			const stationStatusInfo = JSON.parse(body);
     			const stationStatuses = stationStatusInfo.data.stations
-    		
-    			//add station status info to station object
-    		regionsToDisplay.forEach(function(region){
-    			region.stations.map(function(station){
+
+
+    		stations.map(function(station){
     				const station_id = station.station_id
     				const stationStatus = stationStatuses.find((station) => station.station_id == station_id)
-    				station.station_status = stationStatus
+    				station.stationStatus = stationStatus
 
     			})
 
-    		});
-
-    		regionsToDisplay.forEach(function(region){
-		  		html += '<h1>' + region.name + '</h1>'
-		  		html += '<table>'
-		  		html += '<tr> \
-		  					<td >Station</td>\
-		  					<td>Capacity</td>\
-		  					<td>Bikes Available</td>\
-		  					<td>Docks Available</td>\
-		  				</tr>'
-		  		region.stations.map(station => {
-		  			html += 
-		  				`<tr>
-			  				 <td> ${station.name} </td>
-			  				 <td> ${station.capacity} </td>
-			  				 <td> ${station.station_status.num_bikes_available} </td>
-			  				 <td> ${station.station_status.num_docks_available} </td>
-		  				</tr>`
-		  		})
-		  		html += '</table>'
-
-	  	})
-    	bikeDataEmitter.emit('station_status_data_end', html)
+    	bikeDataEmitter.emit('station_status_data_end', stations)
     			
     		})
 		
@@ -174,38 +127,48 @@ function getStationStatus(regions_with_stations){
 	})
 }
 
-function regionsBuild(newServerRequest, newServerResponse){
-	//getRegions();
-	
-	bikeDataEmitter.on('region_data_end', function(regions){
-		console.log('region_data_end')
-		newServerResponse.writeHead(200, {'Content-Type': 'text/html'});  
-		//newServerResponse.write(regions[0].name);
-		newServerResponse.end(regions[0].name);
-	})
-}
 
-function build(newServerRequest, newServerResponse){
-	
-	getRegions();
-	
+function build(req, res){
 
+  console.log(req.params)
 
-	bikeDataEmitter.once('region_data_end', function(regions){
-		console.log('on region_data_end')
-		getStations(regions);
+  const GBFS_URL = city_urls[req.params.cityName]
+  console.log(GBFS_URL)
+
+	
+	let html = fs.readFileSync('./index.html', {encoding: 'utf8'})
+
+	getStations(GBFS_URL);
+
+	bikeDataEmitter.once('station_data_end', function(stations){
+		getStationStatus(GBFS_URL,stations)
 	})
 
-	bikeDataEmitter.once('station_data_end', function(regions_with_stations){
-		console.log('station_data_end')
-		getStationStatus(regions_with_stations)
-	})
+	bikeDataEmitter.once('station_status_data_end', function(stations){
 
-	bikeDataEmitter.once('station_status_data_end', function(html){
-		console.log('station_status_data_end')
-		newServerResponse.writeHead(200, {'Content-Type': 'text/html'});  
-		newServerResponse.write(html);
-		newServerResponse.end();
+    //now that we have station status, let's write it to a JSON file so we can access it in the web browser, outside node.
+    let stationJSON = 'stationJSON = '
+    stationJSON += JSON.stringify(stations);
+    fs.writeFileSync('view/stations.json', stationJSON, {encoding:'utf8'})
+
+    //find total bikes available
+    systemMetrics = {'totalBikesAvialable': 0,
+                      'totalDocksAvailable': 0,
+                      'totalStations': 0}
+
+    stations.forEach((station) => systemMetrics.totalBikesAvialable += station.stationStatus.num_bikes_available)
+    stations.forEach((station) => systemMetrics.totalDocksAvailable += station.stationStatus.num_docks_available)
+    systemMetrics.totalStations = stations.length
+
+    html = html.replace('{{totalBikesAvailable}}', systemMetrics.totalBikesAvialable)
+    html = html.replace('{{totalDocksAvailable}}', systemMetrics.totalDocksAvailable) 
+    html = html.replace('{{Stations}}', systemMetrics.totalStations) 
+    
+    //let's also write the html for our file out to the server. 
+		html = html.replace("{{station-table}}", renderer.createStationsTable(stations))
+  	res.send(html);
+		res.end();
+
 		
 	})
 	
@@ -221,26 +184,26 @@ function testBuild(newServerRequest, newServerResponse){
 	})
 
 	
-	bikeDataEmitter.on('station_data_end', function(regions_with_stations){
+	bikeDataEmitter.on('station_data_end', function(stations){
 		console.log('station_data_end')
-		getStationStatus(regions_with_stations)
+		getStationStatus(stations)
 	})
 
 	
 
-	bikeDataEmitter.on('station_status_data_end', function(html){
+	bikeDataEmitter.on('station_status_data_end', function(stations){
 		console.log('station_status_data_end')
-		console.log(html.substring(0,100))
-	})
-	
+					myArray = [];
 
-	
-	
+		stations.forEach( (station) =>{
+			myArray.push({lat: station.lat, lon: station.lon })
+
+		})
+		myArray.forEach((station)=>console.log(station.lon))
+	})
 	
 }
 
 module.exports.build = build
-module.exports.regionsBuild = regionsBuild
 module.exports.testBuild = testBuild
-module.exports.getRegions = getRegions
 module.exports.getStations = getStations

@@ -1,9 +1,40 @@
 <!DOCTYPE html>
 <html>
-
-	<head>
-			<body>
-				<p><blue>Michelle</blue></p>
-			</body>
-	</head>
+  <head>
+    <title>Boston Blue Bikes Map</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="../static/style.css">
+    <meta name="viewport" content="initial-scale=1.0">
+    <meta charset="utf-8">
+ 
+  </head>
+  <body>
+    <nav>
+        <li class = nav-item>New York</li>
+        <li class = nav-item>Boston</li>
+        <li class = nav-item>Washintgon, D.C.</li>
+    </nav>
+    <div id = 'landing'>
+      <div id="map"></div>
+      <div id = 'system-data'>
+        <div class = 'stat-box'>
+          <div class = 'stat'>{{totalBikesAvailable}}</div>
+          <div class = 'stat-name'>Bikes Available</div>
+        </div>
+        <div class = 'stat-box'>
+          <div class = 'stat'>{{totalDocksAvailable}}</div>
+          <div class = 'stat-name'>Docks Available</div>
+        </div>
+        <div class = 'stat-box'>
+          <div class = 'stat'>{{Stations}}</div>
+          <div class = 'stat-name'>Stations</div>
+        </div>
+      </div>
+    </div>
+    <div class = "station-table-div">{{station-table}}</div>
+    <script src="../static/stations.json"></script>
+    <script src="../static/map.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB7hJDl_5R7a2JFZZvgMKRJs6_fqcMLyYs&callback=initMap"
+    async defer></script>
+  </body>
 </html>
