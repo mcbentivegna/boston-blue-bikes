@@ -11,15 +11,13 @@ const bikeDataEmitter = new MyEmitter();
 //note the english language specification at the end, I'm not sure if smaller bike shares bother to specify the language
 
 city_urls = {
-  'philidelphia': 'https://gbfs.bcycle.com/bcycle_indego',
-  'newyork' :  'https://gbfs.citibikenyc.com/gbfs/en',
-  'boston' : 'https://gbfs.bluebikes.com/gbfs/en',
-  'chicago': 'https://gbfs.divvybikes.com/gbfs/en',
-  'sanfrancisco': 'https://gbfs.fordgobike.com/gbfs/en',
-  'washingtondc': 'https://gbfs.capitalbikeshare.com/gbfs/en',
+  'philidelphia': {url:'https://gbfs.bcycle.com/bcycle_indego', prettyName: 'Philidelphia', bikeShareName: 'Indego'},
+  'newyork' :  {url:'https://gbfs.citibikenyc.com/gbfs/en', prettyName: 'New York', bikeShareName:'Citibike'},
+  'boston' : {url:'https://gbfs.bluebikes.com/gbfs/en', prettyName:'Boston', bikeShareName: 'Blue Bikes'},
+  'chicago': {url:'https://gbfs.divvybikes.com/gbfs/en', prettyName: "Chicago", bikeShareName: 'Divvy'},
+  'sanfrancisco': {url:'https://gbfs.fordgobike.com/gbfs/en', prettyName: "San Francisco", bikeShareName: 'Ford GoBike'},
+  'washingtondc': {url:'https://gbfs.capitalbikeshare.com/gbfs/en', prettyName: "Washington, D.C.", bikeShareName: 'Capital Bikeshare'},
 }
-
-
 
 //pull data about specific regions
 function getRegions(GBFS_URL){
@@ -132,7 +130,7 @@ function build(req, res){
 
   console.log(req.params)
 
-  const GBFS_URL = city_urls[req.params.cityName]
+  const GBFS_URL = city_urls[req.params.cityName].url
   console.log(GBFS_URL)
 
 	
@@ -163,9 +161,21 @@ function build(req, res){
     html = html.replace('{{totalBikesAvailable}}', systemMetrics.totalBikesAvialable)
     html = html.replace('{{totalDocksAvailable}}', systemMetrics.totalDocksAvailable) 
     html = html.replace('{{Stations}}', systemMetrics.totalStations) 
+    html = html.replace('{{prettyName}}', city_urls[req.params.cityName].prettyName) 
+    html = html.replace('{{bikeShareName}}', city_urls[req.params.cityName].bikeShareName) 
     
     //let's also write the html for our file out to the server. 
 		html = html.replace("{{station-table}}", renderer.createStationsTable(stations))
+
+    nav_html = '';
+    for(city in city_urls){
+      nav_html += `<li class = nav-item><a href= ${city}>${city_urls[city].prettyName}</a></li>`
+    }
+
+    html = html.replace("{{nav}}", nav_html)
+
+    console.log(nav_html)
+
   	res.send(html);
 		res.end();
 

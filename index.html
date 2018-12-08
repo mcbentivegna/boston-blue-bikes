@@ -10,13 +10,17 @@
   </head>
   <body>
     <nav>
-        <li class = nav-item>New York</li>
-        <li class = nav-item>Boston</li>
-        <li class = nav-item>Washintgon, D.C.</li>
+        {{nav}}
     </nav>
+
     <div id = 'landing'>
+
       <div id="map"></div>
       <div id = 'system-data'>
+        <div class = 'stat-box'>
+          <div class = 'stat'>{{prettyName}}</div>
+          <div class = 'stat-name'>{{bikeShareName}}</div>
+        </div>
         <div class = 'stat-box'>
           <div class = 'stat'>{{totalBikesAvailable}}</div>
           <div class = 'stat-name'>Bikes Available</div>
@@ -31,10 +35,20 @@
         </div>
       </div>
     </div>
+        <button onclick="changeRadius()">Change radius</button>
+    <div id = heatmapBikes>
+    </div>
+     <div id = heatmapDocks>
+    </div>
+    <div id = heatmapStations>
+    </div>
+    <h1 class='subtitle'>Station Levels</h1>
     <div class = "station-table-div">{{station-table}}</div>
     <script src="../static/stations.json"></script>
     <script src="../static/map.js"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB7hJDl_5R7a2JFZZvgMKRJs6_fqcMLyYs&callback=initMap"
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB7hJDl_5R7a2JFZZvgMKRJs6_fqcMLyYs&callback=initMap&libraries=visualization"
     async defer></script>
+
   </body>
 </html>

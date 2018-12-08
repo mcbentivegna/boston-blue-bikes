@@ -11,6 +11,14 @@
 	float: left;
 	display: inline-block;
 }
+#heatmapBikes, #heatmapDocks,#heatmapStations{
+	width: 50vh;
+	height: 50vh;
+	margin: auto;
+	padding-top: 30px;
+	float: left;
+	display: inline-block;
+}
 
 #landing {
         height: 90vh;
@@ -44,9 +52,38 @@
 }
 
 .station-table-div{
-	display: inline-block;
+	 width:98%; 
+    margin:1%;
 }
 
 .station-table{
+    margin-left:auto; 
+    margin-right:auto; 
 }
+
+.subtitle{
+	font-size: 1.5em;
+    margin: auto;
+    width: max-content;
+    align-content: center;
+    padding-top: 100px;
+
+
+}
+
+th{
+	font-style: bold;
+}
+
+th, td {
+  padding-left: 15px;
+  padding-top: 15px;
+  text-align: left;
+}
+
+#button-cell{
+	padding-left: 30px;
+  	padding-top: 15px;
+}
+
 
