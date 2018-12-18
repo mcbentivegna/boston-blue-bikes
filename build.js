@@ -128,60 +128,62 @@ function getStationStatus(GBFS_URL, stations){
 
 function build(req, res){
 
-  console.log(req.params)
+  //read html file that will be our base
+  let html = fs.readFileSync('./index.html', {encoding: 'utf8'})
+  
+  //figure out if the city requested in the URL is actually supported. If not, show error on page.
+  let  GBFS_URL = '';
 
-  const GBFS_URL = city_urls[req.params.cityName].url
-  console.log(GBFS_URL)
+  try{
+    GBFS_URL = city_urls[req.params.cityName].url;
+  }
+  catch(err){
+    error_html = html.replace('{{body}}', '<h1>This page does not exist</h1>')
+    error_html = renderer.addNavToHTML(error_html, city_urls)
+    res.send(error_html)
+    res.end()
+  }
 
-	
-	let html = fs.readFileSync('./index.html', {encoding: 'utf8'})
-
+	//grab station data from API. When it's done loading, grab the station status as well.
 	getStations(GBFS_URL);
 
 	bikeDataEmitter.once('station_data_end', function(stations){
 		getStationStatus(GBFS_URL,stations)
 	})
 
+  //when station status data is done loading, we start to build our webpage for the request.
 	bikeDataEmitter.once('station_status_data_end', function(stations){
 
     //now that we have station status, let's write it to a JSON file so we can access it in the web browser, outside node.
+    //this is not necessary for the table, but it IS necessary for the maps, which are built in the map.js file which runs in the browser.
     let stationJSON = 'stationJSON = '
     stationJSON += JSON.stringify(stations);
     fs.writeFileSync('view/stations.json', stationJSON, {encoding:'utf8'})
 
-    //find total bikes available
-    systemMetrics = {'totalBikesAvialable': 0,
-                      'totalDocksAvailable': 0,
-                      'totalStations': 0}
-
-    stations.forEach((station) => systemMetrics.totalBikesAvialable += station.stationStatus.num_bikes_available)
-    stations.forEach((station) => systemMetrics.totalDocksAvailable += station.stationStatus.num_docks_available)
-    systemMetrics.totalStations = stations.length
-
-    html = html.replace('{{totalBikesAvailable}}', systemMetrics.totalBikesAvialable)
-    html = html.replace('{{totalDocksAvailable}}', systemMetrics.totalDocksAvailable) 
-    html = html.replace('{{Stations}}', systemMetrics.totalStations) 
-    html = html.replace('{{prettyName}}', city_urls[req.params.cityName].prettyName) 
-    html = html.replace('{{bikeShareName}}', city_urls[req.params.cityName].bikeShareName) 
     
-    //let's also write the html for our file out to the server. 
+
+    //and now let's pull in the city page template, and stick it in our main html.
+    let city_template = fs.readFileSync('./city_template.html', {encoding: 'utf8'})
+    html = html.replace('{{body}}', city_template)
+
+   //let's generate some metrics we'll want to display on the page, and then put them on the page.
+    let systemMetrics = generateSystemMetrics(stations);
+    html = renderer.insertMetricsToHTML(systemMetrics,html)
+
+    //and let's also get the bike share name and city name on the page.
+    html = html.replace(/{{prettyName}}/gi, city_urls[req.params.cityName].prettyName) 
+    html = html.replace(/{{bikeShareName}}/gi, city_urls[req.params.cityName].bikeShareName) 
+    
+    //finally, let's build the station detail table 
 		html = html.replace("{{station-table}}", renderer.createStationsTable(stations))
+    html = renderer.addNavToHTML(html, city_urls)
 
-    nav_html = '';
-    for(city in city_urls){
-      nav_html += `<li class = nav-item><a href= ${city}>${city_urls[city].prettyName}</a></li>`
-    }
-
-    html = html.replace("{{nav}}", nav_html)
-
-    console.log(nav_html)
-
+    //and now, we send the HTML over.
   	res.send(html);
 		res.end();
 
 		
-	})
-	
+	})	
 	
 }
 
@@ -213,6 +215,22 @@ function testBuild(newServerRequest, newServerResponse){
 	})
 	
 }
+
+function generateSystemMetrics(stations){
+   let systemMetrics = {'totalBikesAvailable': 0,
+                      'totalDocksAvailable': 0,
+                      'Stations': 0}
+    console.log(systemMetrics)
+
+    stations.forEach((station) => systemMetrics.totalBikesAvailable += station.stationStatus.num_bikes_available)
+    stations.forEach((station) => systemMetrics.totalDocksAvailable += station.stationStatus.num_docks_available)
+    systemMetrics.Stations = stations.length
+    console.log(systemMetrics)
+
+    return systemMetrics
+
+}
+
 
 module.exports.build = build
 module.exports.testBuild = testBuild

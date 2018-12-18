@@ -11,26 +11,26 @@ function createStationsTable(stations){
 				<th>Docks Available</th>\
 			</tr>'
 
+	
+
 	for (let i = 0; i<stations.length; i++){
-		if(i==5){
-			html += 
-				`<tr>
-					 <td> ${stations[i].name} </td>
+
+		const table_contents = ` <td> ${stations[i].name} </td>
 					 <td> ${stations[i].capacity} </td>
 					 <td> ${stations[i].stationStatus.num_bikes_available} </td>
-					 <td> ${stations[i].stationStatus.num_docks_available} </td>
-					 <td id = 'button-cell'><button>OK Hello!</button></td>
-				</tr>`
+					 <td> ${stations[i].stationStatus.num_docks_available} </td>`
+
+		if (i<4){
+			html += '<tr>' + table_contents + '</tr>'
+		}
+
+		else if(i==4){
+			html += 
+				'<tr>' + table_contents + '<td><button id = "show-more">Show More</button></td></tr>'
 
 		}
 		else{
-			html += 
-				`<tr>
-					 <td> ${stations[i].name} </td>
-					 <td> ${stations[i].capacity} </td>
-					 <td> ${stations[i].stationStatus.num_bikes_available} </td>
-					 <td> ${stations[i].stationStatus.num_docks_available} </td>
-				</tr>`
+			html += '<tr class="hidden">' + table_contents + '</tr>'
 		}
 	}
 
@@ -40,5 +40,29 @@ function createStationsTable(stations){
 	    		return html;
 }
 
+function addNavToHTML(html, city_urls){
+  nav_html = '';
+    for(city in city_urls){
+      nav_html += `<li class = "nav-item"><a class = "nav-link" href= ${city}>${city_urls[city].prettyName}</a></li>`
+    }
+
+    html = html.replace("{{nav}}", nav_html)
+
+    return html;
+}
+
+function insertMetricsToHTML(systemMetrics, html){
+	console.log(systemMetrics)
+	for (metric in systemMetrics){
+		//use RegExp() so you can have a regex without confusing template literals with the backslashes required for regex without this functioin.
+		//g flag indicates global, so all matches on page will be replaced.
+		regex =RegExp(`{{${metric}}}`,'g')
+    	html = html.replace(regex, systemMetrics[metric])
+    }
+    return html;
+}
+
 
 module.exports.createStationsTable = createStationsTable
+module.exports.addNavToHTML = addNavToHTML
+module.exports.insertMetricsToHTML = insertMetricsToHTML

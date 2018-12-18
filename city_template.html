@@ -1,0 +1,56 @@
+  <div id = "title">
+        <h1 id="city-name">{{prettyName}}</h1>
+        <h2 id= "bikeshare-name">{{bikeShareName}}</h2>
+      </div>
+      <div id = heatmap-container>
+        <div class = "heatmap-box">
+          <h2 class= "heatmap-title">Bike Density</h2>
+          <h3 class = "heatmap-stat">{{totalBikesAvailable}} Bikes Available </h3>
+          <div id = heatmapBikes class = heatmap></div>
+        </div>
+        <div class = "heatmap-box">
+          <h2 class= "heatmap-title">Dock Density</h2>
+          <h3 class = "heatmap-stat">{{totalDocksAvailable}} Docks Available</h3>
+          <div id = heatmapDocks class = heatmap></div>
+        </div>
+        <div class = "heatmap-box">
+          <h2 class= "heatmap-title">System Density</h2>
+          <h3 class = "heatmap-stat">Density of Stations and Docks Combined</h3>
+          <div id = heatmapSystem class = heatmap></div>
+      </div>
+    </div>
+      
+      <div id = 'system-data'>
+        <div class = 'stat-box'>
+          <div class = 'stat'>{{prettyName}}</div>
+          <div class = 'stat-name'>{{bikeShareName}}</div>
+        </div>
+        <div class = 'stat-box'>
+          <div class = 'stat'>{{totalBikesAvailable}}</div>
+          <div class = 'stat-name'>Bikes Available</div>
+        </div>
+        <div class = 'stat-box'>
+          <div class = 'stat'>{{totalDocksAvailable}}</div>
+          <div class = 'stat-name'>Docks Available</div>
+        </div>
+        <div class = 'stat-box'>
+          <div class = 'stat'>{{Stations}}</div>
+          <div class = 'stat-name'>Stations</div>
+        </div>
+      </div>
+    <div id = "station-map-container">
+      <h2>Stations</h2>
+      <h3>{{Stations}} stations in the {{bikeShareName}} system</h3>
+      <div id="map"></div>
+    </div>
+    
+    <h2 class='subtitle'>Station Levels</h2>
+    <div class = "station-table-div">{{station-table}}</div>
+    
+    <script src="../static/stations.json"></script>
+    <script src="../static/map.js"></script>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB7hJDl_5R7a2JFZZvgMKRJs6_fqcMLyYs&callback=initMap&libraries=visualization"
+    async defer></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.0.0/jquery.min.js"></script>
+    <script src = "../static/script.js"></script>

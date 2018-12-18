@@ -1,17 +1,34 @@
-let map;
-let baseHeatMap;
-let heatmap;
-let stations = stationJSON
-	
+//we pull in the points we want from the JSON file we created in build.js 
+let points = stationJSON
 
+//defining our map variables - we'll need to use these to build the actual maps.
+let map;
+let baseHeatMapBikes;
+let heatMapBikes
+let baseHeatMapDocks;
+let heatMapDocks
+let baseHeatMapSystem;
+let heatMapSystem;
+let baseHeatMapRatio;
+let heatMapRatio;
+
+//let's define some of the map characteristics we'll want for all maps
+let centerLng = points.reduce((accumulator, currentValue) => accumulator + currentValue.lon,0)/points.length
+let centerLat = points.reduce((accumulator, currentValue) => accumulator + currentValue.lat,0)/points.length
+let baseZoom = 12;
+let baseRadius = 20;
+
+//This function is where we initiate our maps. This function is called in the "callback" query string of the google maps api url
       function initMap() {
+
+      	//this is a map showing all the stations and their details
         var map = new google.maps.Map(document.getElementById('map'), {
-          center: {lng: parseFloat(stations[0].lon), lat: parseFloat(stations[0].lat)},
-          zoom: 12
+          center: {lng: centerLng, lat: centerLat},
+          zoom: baseZoom
         });
       
 
-        stations.forEach((station) => {
+        points.forEach((station) => {
           var marker = new google.maps.Marker({
             position:{lng: parseFloat(station.lon), lat: parseFloat(station.lat)},
             map: map,
@@ -20,79 +37,98 @@ let stations = stationJSON
 
       })
 
-        var baseHeatMapBikes = new google.maps.Map(document.getElementById('heatmapBikes'), {
-          center: {lng: parseFloat(stations[0].lon), lat: parseFloat(stations[0].lat)},
-          zoom: 12,
-          
-        });
-
-       
-        heatmapBikes = new google.maps.visualization.HeatmapLayer({
-          data: getPointsWeightBikes(),
-          map: baseHeatMapBikes,
-          radius:20
-        });
-
-        var baseHeatMapDocks = new google.maps.Map(document.getElementById('heatmapDocks'), {
-          center: {lng: parseFloat(stations[0].lon), lat: parseFloat(stations[0].lat)},
-          zoom: 12,
-          
-        });
-
-       
-        heatmapDocks = new google.maps.visualization.HeatmapLayer({
-          data: getPointsWeightDocks(),
-          map: baseHeatMapDocks,
-          radius:20
-        });
-
-        var baseHeatMapStations = new google.maps.Map(document.getElementById('heatmapStations'), {
-          center: {lng: parseFloat(stations[0].lon), lat: parseFloat(stations[0].lat)},
-          zoom: 12,
-          
-        });
-
-       
-        heatmapStations = new google.maps.visualization.HeatmapLayer({
-          data: getPointsNoWeight(),
-          map: baseHeatMapStations,
-          radius:20
-        });
-   
+        //we can just use our make heatmap function here...
+        makeHeatMap(baseHeatMapBikes, heatMapBikes, 'heatmapBikes', getPointsWeightBikes(), baseRadius, baseZoom)
+        makeHeatMap(baseHeatMapDocks, heatMapDocks, 'heatmapDocks', getPointsWeightDocks(), baseRadius, baseZoom)
+        makeHeatMap(baseHeatMapSystem, heatMapSystem, 'heatmapSystem', getPointsWeightSystem(), baseRadius, baseZoom)
+        //makeHeatMap(baseHeatMapRatio, heatMapRatio, 'heatmapRatio', getPointsRatio(), baseRadius, baseZoom)
       }
 
-    
+    //These are a bunch of functions for calculating the weight of the points - I played with a few variations.
+    //some repetition here, I couldn't figure out how to avoid that.
       function getPointsWeightBikes(){
-      	points = [];
-      	stations.forEach((station)=>{
+      	myPoints = [];
+      	points.forEach((station)=>{
       		let newLoc = new google.maps.LatLng(station.lat, station.lon)
       		let newPoint = {location:newLoc, weight:station.stationStatus.num_bikes_available}
-      		points.push(newPoint)
+      		myPoints.push(newPoint)
       	})
-      	return points
+      	return myPoints
       }
 
       function getPointsWeightDocks(){
-      	points = [];
-      	stations.forEach((station)=>{
+      	myPoints = [];
+      	points.forEach((station)=>{
       		let newLoc = new google.maps.LatLng(station.lat, station.lon)
       		let newPoint = {location:newLoc, weight:station.stationStatus.num_docks_available}
-      		points.push(newPoint)
+      		myPoints.push(newPoint)
       	})
-      	return points
+      	return myPoints
       }
 
-      function getPointsNoWeight(){
-      	points = [];
-      	stations.forEach((station)=>{
+      //sum docks and bikes to get weight. aims to show weight of whole system regardless of current bike/dock arrangement.
+      //I did not use station.capacity, because some systems did not populate this field.
+      function getPointsWeightSystem(){
+      	myPoints = [];
+      	points.forEach((station)=>{
       		let newLoc = new google.maps.LatLng(station.lat, station.lon)
-      		points.push(newLoc)
+      		let newPoint = {location:newLoc, weight:station.stationStatus.num_docks_available + station.stationStatus.num_bikes_available}
+      		myPoints.push(newPoint)
       	})
-      	return points
+      	return myPoints
       }
 
-      function changeRadius() {
+      function getPointsRatio(){
+      	myPoints = [];
+      	points.forEach((station)=>{
+      		let newLoc = new google.maps.LatLng(station.lat, station.lon)
+      		let newPoint = {
+      			location:newLoc, 
+      			weight:(station.stationStatus.num_bikes_available/station.capacity)*100}
+      		myPoints.push(newPoint)
+      	})
+      	console.log(myPoints)
+      	return myPoints
+
+      }
+
+      function getPointsRatioDocks(){
+      	myPoints = [];
+      	points.forEach((station)=>{
+      		let newLoc = new google.maps.LatLng(station.lat, station.lon)
+      		let newPoint = {
+      			location:newLoc, 
+      			weight:(station.stationStatus.num_docks_available/station.capacity)*100}
+      		myPoints.push(newPoint)
+      	})
+      	console.log(myPoints)
+      	return myPoints
+
+      }
+
+
+  
+  	//function for actually making the heatmaps.
+      function makeHeatMap(mapVariable, heatMapVariable, mapDiv, heatMapConstructor, radius = 20, zoom = 12){
+      	 mapVariable = new google.maps.Map(document.getElementById(mapDiv), {
+          center: {lng: centerLng, lat: centerLat},
+          zoom: zoom,
+          
+        });
+
+       
+        heatMapVariable = new google.maps.visualization.HeatmapLayer({
+          data: heatMapConstructor,
+          map: mapVariable,
+          radius: radius
+        });
+
+      }
+
+    function changeRadius() {
         heatmap.set('radius', heatmap.get('radius') ? null : 30);
         console.log(heatmap.get('radius'))
       }
+
+
 

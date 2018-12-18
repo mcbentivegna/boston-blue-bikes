@@ -3,70 +3,92 @@
 }
 
 
-#map{
-	width: 70%;
-	height: 100%;
-	margin: auto;
-	padding-top: 30px;
-	float: left;
-	display: inline-block;
-}
-#heatmapBikes, #heatmapDocks,#heatmapStations{
-	width: 50vh;
-	height: 50vh;
-	margin: auto;
-	padding-top: 30px;
-	float: left;
-	display: inline-block;
+h3{
+	font-weight: normal;
 }
 
-#landing {
-        height: 90vh;
-        margin: 0;
-        padding: 0;
-      }
+
+.nav-link:visited {
+    color: gray;
+    text-decoration: none;
+}
+
+.nav-link:link {
+    color: gray;
+    text-decoration: none;
+}
 
 .nav-item{
 	display: inline-block;	
 	padding: 15px 15px;
 }
 
-#system-data{
-	display: inline;
-}
-
-.stat, .stat-name{
+#title{
+	display: block;
 	text-align: center;
 }
 
-.stat {
-	font-size: 4em;
+#bikeshare-name{
+	font-weight: normal;
 }
 
-.stat-name{
-	font-size: 1em;
+#heatmap-container{
+	overflow:auto;
+	height: 100%;
+	display:block;
 }
 
-.stat-box{
-	margin-bottom: 50px;
+.heatmap{
+
+	height: 50vh
+}
+
+.heatmap-box{
+	width: 25%;
+	margin: auto;
+	display: inline-block;
+	float:left;
+	margin-left: 4.1666666%;
+	margin-right: 4.1666666%;
+	padding-bottom: 10vh;
+	text-align:center;
+}
+
+#map{
+	width: 50%;
+	height: 70%;
+	margin: auto;
+	display: block;
+
+
+}
+
+#station-map-container{
+    overflow:auto;
+	display:block;
+    height: 70vh;
+    text-align:center;
 }
 
 .station-table-div{
-	 width:98%; 
-    margin:1%;
+	
+   overflow:auto; 
+
 }
 
 .station-table{
     margin-left:auto; 
     margin-right:auto; 
-}
+    padding-bottom:
+   
+
+ }
+
 
 .subtitle{
-	font-size: 1.5em;
-    margin: auto;
-    width: max-content;
-    align-content: center;
-    padding-top: 100px;
+
+    display: block;
+    text-align:center;
 
 
 }
@@ -86,4 +108,11 @@ th, td {
   	padding-top: 15px;
 }
 
+.hidden{
+	display:none;
+}
 
+
+#system-data{
+	display: none;
+}

@@ -14,7 +14,6 @@ app.get('/city/:cityName', function(req, res) {
 	builder.build(req, res);
 
 });
-//
 
 app.use('/static',express.static('view'))
 
