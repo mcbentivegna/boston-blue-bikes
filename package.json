@@ -1,0 +1,30 @@
+{
+  "name": "boston-blue-bikes",
+  "version": "1.0.0",
+  "description": "This project produces a webpage that shows density of bikes and docks at various bikeshares throughout the country. The purpose of this project was to get practice building a node.js web app by playing around with one of my favorite data sources, the live bike share data.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mcbentivegna/boston-blue-bikes.git"
+  },
+  "keywords": [
+    "bikes",
+    "nodejs"
+  ],
+  "author": "Michelle Bentivegna",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mcbentivegna/boston-blue-bikes/issues"
+  },
+  "homepage": "https://github.com/mcbentivegna/boston-blue-bikes#readme",
+  "dependencies": {
+    "express": "^4.16.4",
+    "http": "0.0.0"
+  },
+    "engines": {
+    "node": "10.13.0"
+  }
+}

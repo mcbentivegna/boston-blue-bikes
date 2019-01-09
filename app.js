@@ -10,6 +10,10 @@ process.env.NODE_DEBUG = 'http'
 const hostname = '127.0.0.1'
 const port = 8000;
 
+app.get('/', function(req, res){
+	res.redirect('/city/boston')
+})
+
 app.get('/city/:cityName', function(req, res) {
 	builder.build(req, res);
 
